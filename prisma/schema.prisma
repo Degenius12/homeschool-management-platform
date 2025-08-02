@@ -1,0 +1,311 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  role          UserRole  @default(PARENT)
+  families      FamilyMember[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Family {
+  id            String    @id @default(cuid())
+  name          String
+  state         String    @default("TN") // Tennessee by default
+  members       FamilyMember[]
+  students      Student[]
+  schoolYears   SchoolYear[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("families")
+}
+
+model FamilyMember {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  familyId  String
+  role      FamilyRole @default(PARENT)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, familyId])
+  @@map("family_members")
+}
+
+// Student Management
+model Student {
+  id            String    @id @default(cuid())
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime
+  grade         String
+  family        Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  familyId      String
+  
+  // Academic Records
+  attendanceRecords AttendanceRecord[]
+  assignments       Assignment[]
+  grades           Grade[]
+  assessments      Assessment[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("students")
+}
+
+// School Year & Curriculum
+model SchoolYear {
+  id            String    @id @default(cuid())
+  family        Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  familyId      String
+  year          String    // "2024-2025"
+  startDate     DateTime
+  endDate       DateTime
+  daysRequired  Int       @default(180)
+  
+  subjects      Subject[]
+  attendanceRecords AttendanceRecord[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([familyId, year])
+  @@map("school_years")
+}
+
+model Subject {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  curriculum    String    @default("TGTB") // The Good and the Beautiful
+  grade         String
+  schoolYear    SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  schoolYearId  String
+  
+  lessons       Lesson[]
+  assignments   Assignment[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("subjects")
+}
+
+model Lesson {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  lessonNumber  Int?
+  estimatedHours Float    @default(1.0)
+  subject       Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId     String
+  
+  assignments   Assignment[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("lessons")
+}
+
+// Attendance Tracking
+model AttendanceRecord {
+  id            String    @id @default(cuid())
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+  schoolYear    SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  schoolYearId  String
+  date          DateTime
+  status        AttendanceStatus @default(PRESENT)
+  hours         Float     @default(4.0)
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([studentId, date])
+  @@map("attendance_records")
+}
+
+// Academic Tracking
+model Assignment {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  dueDate       DateTime?
+  assignedDate  DateTime  @default(now())
+  
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+  subject       Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId     String
+  lesson        Lesson?   @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  lessonId      String?
+  
+  type          AssignmentType @default(WORKSHEET)
+  status        AssignmentStatus @default(NOT_STARTED)
+  
+  grades        Grade[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("assignments")
+}
+
+model Grade {
+  id            String    @id @default(cuid())
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+  assignment    Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  assignmentId  String
+  
+  score         Float?    // Raw score
+  percentage    Float?    // Percentage score
+  letterGrade   String?   // A, B, C, D, F
+  points        Float?    // Points earned
+  maxPoints     Float?    // Total possible points
+  
+  gradedDate    DateTime  @default(now())
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([assignmentId, studentId])
+  @@map("grades")
+}
+
+// Assessments & Testing
+model Assessment {
+  id            String    @id @default(cuid())
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+  
+  type          AssessmentType
+  title         String
+  testDate      DateTime
+  score         Float?
+  maxScore      Float?
+  percentile    Float?
+  
+  // Tennessee-specific fields
+  grade         String    // Grade when test was taken
+  testingYear   String    // Academic year
+  
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("assessments")
+}
+
+// Tennessee Compliance
+model ComplianceRecord {
+  id            String    @id @default(cuid())
+  familyId      String
+  schoolYear    String
+  
+  // Notice of Intent
+  noticeOfIntentFiled    Boolean   @default(false)
+  noticeOfIntentDate     DateTime?
+  
+  // Attendance Compliance
+  totalDaysCompleted     Int       @default(0)
+  daysRequired          Int       @default(180)
+  complianceStatus      ComplianceStatus @default(ON_TRACK)
+  
+  // Testing Requirements
+  testingRequired       Boolean   @default(false)
+  testingCompleted      Boolean   @default(false)
+  testingDueDate        DateTime?
+  
+  // Records
+  recordsLocation       String?   // Where records are stored
+  portfolioCompleted    Boolean   @default(false)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([familyId, schoolYear])
+  @@map("compliance_records")
+}
+
+// Enums
+enum UserRole {
+  PARENT
+  STUDENT
+  ADMIN
+  UMBRELLA_SCHOOL
+}
+
+enum FamilyRole {
+  PARENT
+  GUARDIAN
+  TEACHER
+  STUDENT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  PARTIAL
+  EXCUSED
+}
+
+enum AssignmentType {
+  WORKSHEET
+  PROJECT
+  QUIZ
+  TEST
+  READING
+  WRITING
+  EXPERIMENT
+  FIELD_TRIP
+  OTHER
+}
+
+enum AssignmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
+  GRADED
+  RETURNED
+}
+
+enum AssessmentType {
+  STANDARDIZED_TEST
+  DIAGNOSTIC
+  PORTFOLIO_REVIEW
+  ACHIEVEMENT_TEST
+  TENNESSEE_REQUIRED
+  OTHER
+}
+
+enum ComplianceStatus {
+  ON_TRACK
+  NEEDS_ATTENTION
+  AT_RISK
+  NON_COMPLIANT
+}
