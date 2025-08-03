@@ -1,25 +1,12 @@
 'use client'
 
 import { User, BookOpen, CheckCircle2, Clock } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export function StudentOverview() {
   const [notifications, setNotifications] = useState<string[]>([])
-
-  const showNotification = (message: string) => {
-    setNotifications(prev => [...prev, message])
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-      setNotifications(prev => prev.slice(1))
-    }, 3000)
-  }
-
-  const handleStudentClick = (studentName: string) => {
-    showNotification(`${studentName}'s profile clicked! Detailed view coming soon...`)
-    console.log(`Student profile opened: ${studentName}`)
-  }
-
-  const students = [
+  const [students, setStudents] = useState([
+    // Default sample data - will be replaced with real data from localStorage
     {
       name: "Emma",
       grade: "5th Grade",
@@ -46,7 +33,68 @@ export function StudentOverview() {
       recentActivity: "Started Science Chapter 8",
       timeAgo: "5 hours ago"
     }
-  ]
+  ])
+
+  // Load real students from localStorage when component mounts
+  useEffect(() => {
+    const loadStudents = () => {
+      try {
+        // Check if we're in the browser (not SSR)
+        if (typeof window !== 'undefined') {
+          const savedStudents = localStorage.getItem('homeschool-students')
+          if (savedStudents) {
+            const parsedStudents = JSON.parse(savedStudents)
+            // Transform the student data to match dashboard format
+            const dashboardStudents = parsedStudents.map((student: any) => ({
+              name: `${student.firstName} ${student.lastName}`,
+              grade: `${student.grade} Grade`,
+              avatar: `${student.firstName[0]}${student.lastName[0]}`,
+              progress: {
+                math: Math.floor(Math.random() * 40) + 60, // Random progress 60-100%
+                reading: Math.floor(Math.random() * 40) + 60,
+                science: Math.floor(Math.random() * 40) + 60,
+                history: Math.floor(Math.random() * 40) + 60
+              },
+              recentActivity: "Recently added to your homeschool",
+              timeAgo: "Today"
+            }))
+            
+            if (dashboardStudents.length > 0) {
+              setStudents(dashboardStudents)
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Using default student data')
+      }
+    }
+
+    loadStudents()
+
+    // Listen for storage changes (when students are added on other pages)
+    const handleStorageChange = () => {
+      loadStudents()
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    // Also listen for custom events when students are updated
+    window.addEventListener('students-updated', handleStorageChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('students-updated', handleStorageChange)
+    }
+  }, [])
+
+  const showNotification = (message: string) => {
+    setNotifications(prev => [...prev, message])
+    setTimeout(() => setNotifications(prev => prev.slice(1)), 3000)
+  }
+
+  const handleStudentClick = (studentName: string) => {
+    showNotification(`${studentName}'s profile clicked! Detailed view coming soon...`)
+    console.log(`Student profile opened: ${studentName}`)
+  }
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm relative">
@@ -66,7 +114,7 @@ export function StudentOverview() {
 
       <div className="p-6 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900">Student Progress</h3>
-        <p className="text-sm text-gray-600 mt-1">Individual progress across TGTB subjects</p>
+        <p className="text-sm text-gray-600 mt-1">Individual progress across TGTB subjects ({students.length} students)</p>
       </div>
       <div className="p-6">
         <div className="space-y-6">
