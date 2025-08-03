@@ -1,10 +1,21 @@
 'use client'
 
 import { User, BookOpen, CheckCircle2, Clock } from 'lucide-react'
+import { useState } from 'react'
 
 export function StudentOverview() {
+  const [notifications, setNotifications] = useState<string[]>([])
+
+  const showNotification = (message: string) => {
+    setNotifications(prev => [...prev, message])
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.slice(1))
+    }, 3000)
+  }
+
   const handleStudentClick = (studentName: string) => {
-    alert(`${studentName}'s profile clicked! This will open detailed progress view.`)
+    showNotification(`${studentName}'s profile clicked! Detailed view coming soon...`)
     console.log(`Student profile opened: ${studentName}`)
   }
 
@@ -38,7 +49,21 @@ export function StudentOverview() {
   ]
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm relative">
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="absolute top-4 right-4 z-10 space-y-2">
+          {notifications.map((notification, index) => (
+            <div
+              key={index}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm animate-in slide-in-from-top-2"
+            >
+              {notification}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="p-6 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900">Student Progress</h3>
         <p className="text-sm text-gray-600 mt-1">Individual progress across TGTB subjects</p>
