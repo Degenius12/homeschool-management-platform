@@ -28,11 +28,11 @@ export function QuickActions() {
       case 'Manage Students':
         router.push('/students')
         break
+      case 'Mark Attendance':
+        router.push('/attendance')
+        break
       case 'Add Lesson':
         showNotification('Add Lesson feature coming soon...')
-        break
-      case 'Mark Attendance':
-        showNotification('Mark Attendance feature coming soon...')
         break
       case 'Generate Report':
         showNotification('Generate Report feature coming soon...')
