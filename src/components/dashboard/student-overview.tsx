@@ -3,6 +3,11 @@
 import { User, BookOpen, CheckCircle2, Clock } from 'lucide-react'
 
 export function StudentOverview() {
+  const handleStudentClick = (studentName: string) => {
+    alert(`${studentName}'s profile clicked! This will open detailed progress view.`)
+    console.log(`Student profile opened: ${studentName}`)
+  }
+
   const students = [
     {
       name: "Emma",
@@ -41,7 +46,11 @@ export function StudentOverview() {
       <div className="p-6">
         <div className="space-y-6">
           {students.map((student, index) => (
-            <div key={index} className="border rounded-lg p-4">
+            <div 
+              key={index} 
+              onClick={() => handleStudentClick(student.name)}
+              className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-colors"
+            >
               <div className="flex items-center mb-4">
                 <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
                   <span className="text-white font-medium">{student.avatar}</span>
