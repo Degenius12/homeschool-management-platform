@@ -8,11 +8,21 @@ import {
   BarChart3, 
   Settings 
 } from 'lucide-react'
+import { useState } from 'react'
 
 export function QuickActions() {
+  const [notifications, setNotifications] = useState<string[]>([])
+
+  const showNotification = (message: string) => {
+    setNotifications(prev => [...prev, message])
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.slice(1))
+    }, 3000)
+  }
+
   const handleAction = (actionTitle: string) => {
-    // For now, show an alert - later we'll implement full functionality
-    alert(`${actionTitle} clicked! This will navigate to the ${actionTitle.toLowerCase()} page.`)
+    showNotification(`${actionTitle} clicked! Feature coming soon...`)
     console.log(`Action triggered: ${actionTitle}`)
   }
 
@@ -44,7 +54,21 @@ export function QuickActions() {
   ]
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm relative">
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="absolute top-4 right-4 z-10 space-y-2">
+          {notifications.map((notification, index) => (
+            <div
+              key={index}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm animate-in slide-in-from-top-2"
+            >
+              {notification}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="p-6 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
         <p className="text-sm text-gray-600 mt-1">Common tasks and shortcuts</p>
