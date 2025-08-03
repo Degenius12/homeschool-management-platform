@@ -3,33 +3,28 @@
 import { useState } from 'react'
 import { User, Calendar, GraduationCap, Edit, Trash2, MoreVertical } from 'lucide-react'
 
-export function StudentList() {
+interface Student {
+  id: string
+  firstName: string
+  lastName: string
+  dateOfBirth: string
+  grade: string
+  enrollmentDate: string
+}
+
+interface StudentListProps {
+  students: Student[]
+  onRemoveStudent: (studentId: string) => void
+  onUpdateStudent: (studentId: string, updatedData: Partial<Student>) => void
+}
+
+export function StudentList({ students, onRemoveStudent, onUpdateStudent }: StudentListProps) {
   const [notification, setNotification] = useState('')
 
   const showNotification = (message: string) => {
     setNotification(message)
     setTimeout(() => setNotification(''), 3000)
   }
-
-  // Sample students - replace with real data from API
-  const [students, setStudents] = useState([
-    {
-      id: '1',
-      firstName: 'Emma',
-      lastName: 'Johnson',
-      dateOfBirth: '2014-05-15',
-      grade: '5th',
-      enrollmentDate: '2024-08-01',
-    },
-    {
-      id: '2',
-      firstName: 'Liam',
-      lastName: 'Johnson',
-      dateOfBirth: '2016-09-22',
-      grade: '3rd',
-      enrollmentDate: '2024-08-01',
-    }
-  ])
 
   const calculateAge = (dateOfBirth: string) => {
     const today = new Date()
@@ -51,7 +46,7 @@ export function StudentList() {
 
   const handleDelete = (studentId: string, studentName: string) => {
     if (confirm(`Are you sure you want to remove ${studentName} from your students list?`)) {
-      setStudents(prev => prev.filter(student => student.id !== studentId))
+      onRemoveStudent(studentId)
       showNotification(`${studentName} removed successfully`)
     }
   }
