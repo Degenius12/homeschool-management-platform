@@ -9,9 +9,11 @@ import {
   Settings 
 } from 'lucide-react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export function QuickActions() {
   const [notifications, setNotifications] = useState<string[]>([])
+  const router = useRouter()
 
   const showNotification = (message: string) => {
     setNotifications(prev => [...prev, message])
@@ -22,7 +24,25 @@ export function QuickActions() {
   }
 
   const handleAction = (actionTitle: string) => {
-    showNotification(`${actionTitle} clicked! Feature coming soon...`)
+    switch (actionTitle) {
+      case 'Manage Students':
+        router.push('/students')
+        break
+      case 'Add Lesson':
+        showNotification('Add Lesson feature coming soon...')
+        break
+      case 'Mark Attendance':
+        showNotification('Mark Attendance feature coming soon...')
+        break
+      case 'Generate Report':
+        showNotification('Generate Report feature coming soon...')
+        break
+      case 'Settings':
+        showNotification('Settings feature coming soon...')
+        break
+      default:
+        showNotification(`${actionTitle} clicked! Feature coming soon...`)
+    }
     console.log(`Action triggered: ${actionTitle}`)
   }
 
