@@ -40,25 +40,33 @@ export function StudentForm({ onAddStudent }: StudentFormProps) {
     setIsSubmitting(true)
 
     try {
+      console.log('Form submission started with data:', formData)
+      
       // Simulate brief loading time
       await new Promise(resolve => setTimeout(resolve, 500))
       
       // Actually add the student using the parent function
+      console.log('Calling onAddStudent function...')
       onAddStudent(formData)
       
+      console.log('Student added successfully, showing notification')
       showNotification(`${formData.firstName} ${formData.lastName} added successfully!`)
       
       // Reset form
+      console.log('Resetting form...')
       setFormData({
         firstName: '',
         lastName: '',
         dateOfBirth: '',
         grade: '',
       })
+      
     } catch (error) {
+      console.error('Error in form submission:', error)
       showNotification('Error adding student. Please try again.')
     } finally {
       setIsSubmitting(false)
+      console.log('Form submission completed')
     }
   }
 
