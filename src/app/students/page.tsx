@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { StudentForm } from '@/components/students/student-form'
 import { StudentList } from '@/components/students/student-list'
 
@@ -16,24 +16,61 @@ interface Student {
 
 export default function StudentsPage() {
   // Shared state for all students
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: '1',
-      firstName: 'Emma',
-      lastName: 'Johnson',
-      dateOfBirth: '2014-05-15',
-      grade: '5th',
-      enrollmentDate: '2024-08-01',
-    },
-    {
-      id: '2',
-      firstName: 'Liam',
-      lastName: 'Johnson',
-      dateOfBirth: '2016-09-22',
-      grade: '3rd',
-      enrollmentDate: '2024-08-01',
+  const [students, setStudents] = useState<Student[]>([])
+
+  // Load students from localStorage when component mounts
+  useEffect(() => {
+    const loadStudents = () => {
+      try {
+        if (typeof window !== 'undefined') {
+          const savedStudents = localStorage.getItem('homeschool-students')
+          if (savedStudents) {
+            const parsedStudents = JSON.parse(savedStudents)
+            setStudents(parsedStudents)
+          } else {
+            // If no saved students, start with sample data
+            const defaultStudents = [
+              {
+                id: '1',
+                firstName: 'Emma',
+                lastName: 'Johnson',
+                dateOfBirth: '2014-05-15',
+                grade: '5th',
+                enrollmentDate: '2024-08-01',
+              },
+              {
+                id: '2',
+                firstName: 'Liam',
+                lastName: 'Johnson',
+                dateOfBirth: '2016-09-22',
+                grade: '3rd',
+                enrollmentDate: '2024-08-01',
+              }
+            ]
+            setStudents(defaultStudents)
+            saveStudentsToStorage(defaultStudents)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading students:', error)
+      }
     }
-  ])
+
+    loadStudents()
+  }, [])
+
+  // Save students to localStorage and notify other components
+  const saveStudentsToStorage = (updatedStudents: Student[]) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('homeschool-students', JSON.stringify(updatedStudents))
+        // Dispatch custom event to notify Dashboard
+        window.dispatchEvent(new CustomEvent('students-updated'))
+      }
+    } catch (error) {
+      console.error('Error saving students:', error)
+    }
+  }
 
   // Function to add a new student
   const addStudent = (studentData: Omit<Student, 'id' | 'enrollmentDate'>) => {
@@ -43,21 +80,27 @@ export default function StudentsPage() {
       enrollmentDate: new Date().toISOString().split('T')[0], // Today's date
     }
     
-    setStudents(prev => [...prev, newStudent])
+    const updatedStudents = [...students, newStudent]
+    setStudents(updatedStudents)
+    saveStudentsToStorage(updatedStudents)
   }
 
   // Function to remove a student
   const removeStudent = (studentId: string) => {
-    setStudents(prev => prev.filter(student => student.id !== studentId))
+    const updatedStudents = students.filter(student => student.id !== studentId)
+    setStudents(updatedStudents)
+    saveStudentsToStorage(updatedStudents)
   }
 
   // Function to update a student
   const updateStudent = (studentId: string, updatedData: Partial<Student>) => {
-    setStudents(prev => prev.map(student => 
+    const updatedStudents = students.map(student => 
       student.id === studentId 
         ? { ...student, ...updatedData }
         : student
-    ))
+    )
+    setStudents(updatedStudents)
+    saveStudentsToStorage(updatedStudents)
   }
 
   return (
