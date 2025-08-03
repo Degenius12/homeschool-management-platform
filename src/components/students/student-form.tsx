@@ -3,7 +3,16 @@
 import { useState } from 'react'
 import { User, Calendar, GraduationCap, Save } from 'lucide-react'
 
-export function StudentForm() {
+interface StudentFormProps {
+  onAddStudent: (studentData: {
+    firstName: string
+    lastName: string
+    dateOfBirth: string
+    grade: string
+  }) => void
+}
+
+export function StudentForm({ onAddStudent }: StudentFormProps) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -31,8 +40,11 @@ export function StudentForm() {
     setIsSubmitting(true)
 
     try {
-      // Simulate API call - replace with actual API endpoint later
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Simulate brief loading time
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Actually add the student using the parent function
+      onAddStudent(formData)
       
       showNotification(`${formData.firstName} ${formData.lastName} added successfully!`)
       
