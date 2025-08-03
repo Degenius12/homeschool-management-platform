@@ -10,6 +10,12 @@ import {
 } from 'lucide-react'
 
 export function QuickActions() {
+  const handleAction = (actionTitle: string) => {
+    // For now, show an alert - later we'll implement full functionality
+    alert(`${actionTitle} clicked! This will navigate to the ${actionTitle.toLowerCase()} page.`)
+    console.log(`Action triggered: ${actionTitle}`)
+  }
+
   const actions = [
     {
       title: "Add Lesson",
@@ -48,7 +54,8 @@ export function QuickActions() {
           {actions.map((action, index) => (
             <button
               key={index}
-              className={`${action.color} text-white p-4 rounded-lg text-left transition-colors`}
+              onClick={() => handleAction(action.title)}
+              className={`${action.color} text-white p-4 rounded-lg text-left transition-colors cursor-pointer`}
             >
               <action.icon className="h-6 w-6 mb-2" />
               <h4 className="font-medium text-sm">{action.title}</h4>
@@ -58,7 +65,10 @@ export function QuickActions() {
         </div>
         
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <button className="w-full flex items-center justify-center space-x-2 py-2 text-gray-600 hover:text-gray-800">
+          <button 
+            onClick={() => handleAction('Settings')}
+            className="w-full flex items-center justify-center space-x-2 py-2 text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
+          >
             <Settings className="h-4 w-4" />
             <span className="text-sm">More Options</span>
           </button>
