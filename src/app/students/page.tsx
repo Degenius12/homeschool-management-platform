@@ -17,6 +17,7 @@ interface Student {
 export default function StudentsPage() {
   // Shared state for all students
   const [students, setStudents] = useState<Student[]>([])
+  const [isLoaded, setIsLoaded] = useState(false)
 
   // Load students from localStorage when component mounts
   useEffect(() => {
@@ -28,7 +29,7 @@ export default function StudentsPage() {
             const parsedStudents = JSON.parse(savedStudents)
             setStudents(parsedStudents)
           } else {
-            // If no saved students, start with sample data
+            // Only set default students if no saved data exists AND this is the first load
             const defaultStudents = [
               {
                 id: '1',
@@ -48,11 +49,13 @@ export default function StudentsPage() {
               }
             ]
             setStudents(defaultStudents)
-            saveStudentsToStorage(defaultStudents)
+            localStorage.setItem('homeschool-students', JSON.stringify(defaultStudents))
           }
         }
       } catch (error) {
         console.error('Error loading students:', error)
+      } finally {
+        setIsLoaded(true)
       }
     }
 
@@ -66,6 +69,7 @@ export default function StudentsPage() {
         localStorage.setItem('homeschool-students', JSON.stringify(updatedStudents))
         // Dispatch custom event to notify Dashboard
         window.dispatchEvent(new CustomEvent('students-updated'))
+        console.log('Students saved to localStorage:', updatedStudents)
       }
     } catch (error) {
       console.error('Error saving students:', error)
@@ -83,6 +87,7 @@ export default function StudentsPage() {
     const updatedStudents = [...students, newStudent]
     setStudents(updatedStudents)
     saveStudentsToStorage(updatedStudents)
+    console.log('Added new student:', newStudent)
   }
 
   // Function to remove a student
@@ -90,6 +95,7 @@ export default function StudentsPage() {
     const updatedStudents = students.filter(student => student.id !== studentId)
     setStudents(updatedStudents)
     saveStudentsToStorage(updatedStudents)
+    console.log('Removed student with ID:', studentId)
   }
 
   // Function to update a student
@@ -101,6 +107,16 @@ export default function StudentsPage() {
     )
     setStudents(updatedStudents)
     saveStudentsToStorage(updatedStudents)
+    console.log('Updated student:', studentId, updatedData)
+  }
+
+  // Don't render until data is loaded
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (
