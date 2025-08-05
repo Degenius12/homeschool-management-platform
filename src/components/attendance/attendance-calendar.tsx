@@ -33,6 +33,31 @@ export function AttendanceCalendar() {
   const [students, setStudents] = useState<Student[]>([])
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([])
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
+  const [todayString, setTodayString] = useState('')
+  
+  // Set date on client side only to avoid SSR mismatch
+  useEffect(() => {
+    // Force local timezone calculation by using date parts directly
+    const now = new Date()
+    
+    // Method 1: Direct local date parts
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0') 
+    const day = String(now.getDate()).padStart(2, '0')
+    const method1 = `${year}-${month}-${day}`
+    
+    // Method 2: Using toLocaleDateString and parsing
+    const localDateParts = now.toLocaleDateString('en-CA') // YYYY-MM-DD format
+    
+    // Method 3: Adjust for timezone offset
+    const offsetMs = now.getTimezoneOffset() * 60000
+    const localTime = new Date(now.getTime() - offsetMs)
+    const method3 = localTime.toISOString().split('T')[0]
+    
+    // Use method 2 (toLocaleDateString) as it should be most reliable
+    const dateString = localDateParts
+    setTodayString(dateString)
+  }, [])
 
   useEffect(() => {
     loadData()
@@ -46,18 +71,21 @@ export function AttendanceCalendar() {
     return () => window.removeEventListener('attendance-updated', handleAttendanceUpdate)
   }, [])
 
-  const loadData = () => {
+  const loadData = async () => {
     try {
-      if (typeof window === 'undefined') return
+      // Fetch students from API
+      const studentsResponse = await fetch('/api/students')
+      if (studentsResponse.ok) {
+        const studentsArray = await studentsResponse.json()
+        setStudents(studentsArray)
+      }
 
-      const studentsData = localStorage.getItem('homeschool-students')
-      const attendanceDataRaw = localStorage.getItem('homeschool-attendance')
-      
-      const studentsArray: Student[] = studentsData ? JSON.parse(studentsData) : []
-      const attendanceArray: AttendanceRecord[] = attendanceDataRaw ? JSON.parse(attendanceDataRaw) : []
-
-      setStudents(studentsArray)
-      setAttendanceData(attendanceArray)
+      // Fetch attendance data from API
+      const attendanceResponse = await fetch('/api/attendance')
+      if (attendanceResponse.ok) {
+        const attendanceArray = await attendanceResponse.json()
+        setAttendanceData(attendanceArray)
+      }
     } catch (error) {
       console.error('Error loading calendar data:', error)
     }
@@ -77,15 +105,13 @@ export function AttendanceCalendar() {
     startDate.setDate(startDate.getDate() - firstDay.getDay())
     
     const days: DayData[] = []
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
 
     // Generate 42 days (6 weeks) for calendar grid
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate)
       date.setDate(startDate.getDate() + i)
       
-      const dateString = date.toISOString().split('T')[0]
+      const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
       const dayAttendance = attendanceData.filter(record => record.date === dateString)
       
       // Calculate attendance status for this day
@@ -111,7 +137,7 @@ export function AttendanceCalendar() {
         date: dateString,
         dayOfMonth: date.getDate(),
         isCurrentMonth: date.getMonth() === month,
-        isToday: date.getTime() === today.getTime(),
+        isToday: dateString === todayString,
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
         attendance: dayAttendance,
         totalHours,
@@ -274,11 +300,16 @@ export function AttendanceCalendar() {
               <div className="flex items-center space-x-2">
                 <Calendar className="h-5 w-5 text-blue-600" />
                 <h3 className="font-medium text-gray-900">
-                  {new Date(selectedDay.date).toLocaleDateString('en-US', { 
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+{selectedDay.date === todayString ? "Today's Date: " : "Selected Date: "}{(() => {
+                    // Parse date string manually to avoid timezone issues
+                    const [year, month, day] = selectedDay.date.split('-').map(Number)
+                    const localDate = new Date(year, month - 1, day) // month is 0-indexed
+                    return localDate.toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric'
+                    })
+                  })()}
                 </h3>
               </div>
 

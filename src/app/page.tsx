@@ -7,18 +7,21 @@ import { QuickActions } from '@/components/dashboard/quick-actions'
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+      {/* Header with improved styling */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg border p-8 text-white">
+        <h1 className="text-3xl font-bold mb-3">
           Welcome to Your Homeschool Dashboard
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-blue-100 text-lg">
           Track your family's progress with The Good and the Beautiful curriculum 
           while staying Tennessee compliant.
         </p>
       </div>
 
-      {/* Compliance Alert */}
+      {/* Quick Actions prominently placed */}
+      <QuickActions />
+
+      {/* Compliance Alert - moved lower for less cognitive load */}
       <ComplianceStatus />
 
       {/* Main Grid */}
@@ -29,9 +32,8 @@ export default function DashboardPage() {
           <StudentOverview />
         </div>
 
-        {/* Right Column - Quick Actions & Tasks */}
+        {/* Right Column - Tasks & Secondary Info */}
         <div className="space-y-6">
-          <QuickActions />
           <UpcomingTasks />
         </div>
       </div>

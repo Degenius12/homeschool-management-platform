@@ -3,10 +3,11 @@
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "windows"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -16,7 +17,7 @@ model User {
   email         String    @unique
   name          String?
   image         String?
-  role          UserRole  @default(PARENT)
+  role          String    @default("PARENT")
   families      FamilyMember[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -43,7 +44,7 @@ model FamilyMember {
   userId    String
   family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
   familyId  String
-  role      FamilyRole @default(PARENT)
+  role      String     @default("PARENT")
   createdAt DateTime @default(now())
 
   @@unique([userId, familyId])
@@ -135,7 +136,7 @@ model AttendanceRecord {
   schoolYear    SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   schoolYearId  String
   date          DateTime
-  status        AttendanceStatus @default(PRESENT)
+  status        String           @default("PRESENT")
   hours         Float     @default(4.0)
   notes         String?
   
@@ -161,8 +162,8 @@ model Assignment {
   lesson        Lesson?   @relation(fields: [lessonId], references: [id], onDelete: SetNull)
   lessonId      String?
   
-  type          AssignmentType @default(WORKSHEET)
-  status        AssignmentStatus @default(NOT_STARTED)
+  type          String         @default("WORKSHEET")
+  status        String         @default("NOT_STARTED")
   
   grades        Grade[]
   
@@ -201,7 +202,7 @@ model Assessment {
   student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId     String
   
-  type          AssessmentType
+  type          String
   title         String
   testDate      DateTime
   score         Float?
@@ -233,7 +234,7 @@ model ComplianceRecord {
   // Attendance Compliance
   totalDaysCompleted     Int       @default(0)
   daysRequired          Int       @default(180)
-  complianceStatus      ComplianceStatus @default(ON_TRACK)
+  complianceStatus      String           @default("ON_TRACK")
   
   // Testing Requirements
   testingRequired       Boolean   @default(false)
@@ -251,61 +252,12 @@ model ComplianceRecord {
   @@map("compliance_records")
 }
 
-// Enums
-enum UserRole {
-  PARENT
-  STUDENT
-  ADMIN
-  UMBRELLA_SCHOOL
-}
-
-enum FamilyRole {
-  PARENT
-  GUARDIAN
-  TEACHER
-  STUDENT
-}
-
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  PARTIAL
-  EXCUSED
-}
-
-enum AssignmentType {
-  WORKSHEET
-  PROJECT
-  QUIZ
-  TEST
-  READING
-  WRITING
-  EXPERIMENT
-  FIELD_TRIP
-  OTHER
-}
-
-enum AssignmentStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
-  SUBMITTED
-  GRADED
-  RETURNED
-}
-
-enum AssessmentType {
-  STANDARDIZED_TEST
-  DIAGNOSTIC
-  PORTFOLIO_REVIEW
-  ACHIEVEMENT_TEST
-  TENNESSEE_REQUIRED
-  OTHER
-}
-
-enum ComplianceStatus {
-  ON_TRACK
-  NEEDS_ATTENTION
-  AT_RISK
-  NON_COMPLIANT
-}
+// Note: Using strings instead of enums for SQLite compatibility
+// Valid values:
+// UserRole: PARENT, STUDENT, ADMIN, UMBRELLA_SCHOOL
+// FamilyRole: PARENT, GUARDIAN, TEACHER, STUDENT
+// AttendanceStatus: PRESENT, ABSENT, PARTIAL, EXCUSED
+// AssignmentType: WORKSHEET, PROJECT, QUIZ, TEST, READING, WRITING, EXPERIMENT, FIELD_TRIP, OTHER
+// AssignmentStatus: NOT_STARTED, IN_PROGRESS, COMPLETED, SUBMITTED, GRADED, RETURNED
+// AssessmentType: STANDARDIZED_TEST, DIAGNOSTIC, PORTFOLIO_REVIEW, ACHIEVEMENT_TEST, TENNESSEE_REQUIRED, OTHER
+// ComplianceStatus: ON_TRACK, NEEDS_ATTENTION, AT_RISK, NON_COMPLIANT

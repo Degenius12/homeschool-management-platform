@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Users, BarChart3, FileText, Settings } from 'lucide-react'
+import { Home, Users, BarChart3, FileText, Settings, GraduationCap, BookOpen } from 'lucide-react'
 
 export function Navigation() {
   const pathname = usePathname()
@@ -22,6 +22,16 @@ export function Navigation() {
       href: '/attendance',
       label: 'Attendance',
       icon: BarChart3,
+    },
+    {
+      href: '/grades',
+      label: 'Grades',
+      icon: GraduationCap,
+    },
+    {
+      href: '/curriculum',
+      label: 'Curriculum',
+      icon: BookOpen,
     },
     {
       href: '/reports',

@@ -4,56 +4,51 @@ import { useState, useEffect } from 'react'
 import { StudentForm } from '@/components/students/student-form'
 import { StudentList } from '@/components/students/student-list'
 
-// Define the Student type
+// Define the Student type to match database structure
 interface Student {
   id: string
   firstName: string
   lastName: string
   dateOfBirth: string
   grade: string
-  enrollmentDate: string
+  createdAt: string
+  updatedAt: string
+  family?: {
+    id: string
+    name: string
+  }
 }
 
 export default function StudentsPage() {
   // Shared state for all students
   const [students, setStudents] = useState<Student[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Load students from localStorage when component mounts
+  // Load students from database when component mounts
   useEffect(() => {
-    const loadStudents = () => {
+    const loadStudents = async () => {
       try {
-        if (typeof window !== 'undefined') {
-          const savedStudents = localStorage.getItem('homeschool-students')
-          if (savedStudents) {
-            const parsedStudents = JSON.parse(savedStudents)
-            setStudents(parsedStudents)
-          } else {
-            // Only set default students if no saved data exists AND this is the first load
-            const defaultStudents = [
-              {
-                id: '1',
-                firstName: 'Emma',
-                lastName: 'Johnson',
-                dateOfBirth: '2014-05-15',
-                grade: '5th',
-                enrollmentDate: '2024-08-01',
-              },
-              {
-                id: '2',
-                firstName: 'Liam',
-                lastName: 'Johnson',
-                dateOfBirth: '2016-09-22',
-                grade: '3rd',
-                enrollmentDate: '2024-08-01',
-              }
-            ]
-            setStudents(defaultStudents)
-            localStorage.setItem('homeschool-students', JSON.stringify(defaultStudents))
-          }
+        setError(null)
+        const response = await fetch('/api/students')
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
+        
+        const studentsData = await response.json()
+        
+        // Transform the data to match our interface
+        const transformedStudents = studentsData.map((student: any) => ({
+          ...student,
+          dateOfBirth: student.dateOfBirth.split('T')[0] // Convert to YYYY-MM-DD format
+        }))
+        
+        setStudents(transformedStudents)
+        console.log('Loaded students from database:', transformedStudents)
       } catch (error) {
         console.error('Error loading students:', error)
+        setError('Failed to load students. Please try refreshing the page.')
       } finally {
         setIsLoaded(true)
       }
@@ -62,52 +57,110 @@ export default function StudentsPage() {
     loadStudents()
   }, [])
 
-  // Save students to localStorage and notify other components
-  const saveStudentsToStorage = (updatedStudents: Student[]) => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('homeschool-students', JSON.stringify(updatedStudents))
-        // Dispatch custom event to notify Dashboard
-        window.dispatchEvent(new CustomEvent('students-updated'))
-        console.log('Students saved to localStorage:', updatedStudents)
-      }
-    } catch (error) {
-      console.error('Error saving students:', error)
-    }
-  }
-
   // Function to add a new student
-  const addStudent = (studentData: Omit<Student, 'id' | 'enrollmentDate'>) => {
-    const newStudent: Student = {
-      ...studentData,
-      id: Date.now().toString(), // Simple ID generation
-      enrollmentDate: new Date().toISOString().split('T')[0], // Today's date
+  const addStudent = async (studentData: {
+    firstName: string
+    lastName: string
+    dateOfBirth: string
+    grade: string
+  }) => {
+    try {
+      setError(null)
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(studentData),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const newStudent = await response.json()
+      
+      // Transform the data to match our interface
+      const transformedStudent = {
+        ...newStudent,
+        dateOfBirth: newStudent.dateOfBirth.split('T')[0]
+      }
+      
+      setStudents(prev => [transformedStudent, ...prev])
+      console.log('Added new student:', transformedStudent)
+      
+      // Dispatch custom event to notify Dashboard
+      window.dispatchEvent(new CustomEvent('students-updated'))
+    } catch (error) {
+      console.error('Error adding student:', error)
+      setError('Failed to add student. Please try again.')
+      throw error // Re-throw so the form can handle it
     }
-    
-    const updatedStudents = [...students, newStudent]
-    setStudents(updatedStudents)
-    saveStudentsToStorage(updatedStudents)
-    console.log('Added new student:', newStudent)
   }
 
   // Function to remove a student
-  const removeStudent = (studentId: string) => {
-    const updatedStudents = students.filter(student => student.id !== studentId)
-    setStudents(updatedStudents)
-    saveStudentsToStorage(updatedStudents)
-    console.log('Removed student with ID:', studentId)
+  const removeStudent = async (studentId: string) => {
+    try {
+      setError(null)
+      const response = await fetch(`/api/students/${studentId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      setStudents(prev => prev.filter(student => student.id !== studentId))
+      console.log('Removed student with ID:', studentId)
+      
+      // Dispatch custom event to notify Dashboard
+      window.dispatchEvent(new CustomEvent('students-updated'))
+    } catch (error) {
+      console.error('Error removing student:', error)
+      setError('Failed to remove student. Please try again.')
+    }
   }
 
   // Function to update a student
-  const updateStudent = (studentId: string, updatedData: Partial<Student>) => {
-    const updatedStudents = students.map(student => 
-      student.id === studentId 
-        ? { ...student, ...updatedData }
-        : student
-    )
-    setStudents(updatedStudents)
-    saveStudentsToStorage(updatedStudents)
-    console.log('Updated student:', studentId, updatedData)
+  const updateStudent = async (studentId: string, updatedData: {
+    firstName: string
+    lastName: string
+    dateOfBirth: string
+    grade: string
+  }) => {
+    try {
+      setError(null)
+      const response = await fetch(`/api/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const updatedStudent = await response.json()
+      
+      // Transform the data to match our interface
+      const transformedStudent = {
+        ...updatedStudent,
+        dateOfBirth: updatedStudent.dateOfBirth.split('T')[0]
+      }
+      
+      setStudents(prev => prev.map(student => 
+        student.id === studentId ? transformedStudent : student
+      ))
+      console.log('Updated student:', transformedStudent)
+      
+      // Dispatch custom event to notify Dashboard
+      window.dispatchEvent(new CustomEvent('students-updated'))
+    } catch (error) {
+      console.error('Error updating student:', error)
+      setError('Failed to update student. Please try again.')
+    }
   }
 
   // Don't render until data is loaded

@@ -9,13 +9,23 @@ interface Student {
   lastName: string
   dateOfBirth: string
   grade: string
-  enrollmentDate: string
+  createdAt: string
+  updatedAt: string
+  family?: {
+    id: string
+    name: string
+  }
 }
 
 interface StudentListProps {
   students: Student[]
   onRemoveStudent: (studentId: string) => void
-  onUpdateStudent: (studentId: string, updatedData: Partial<Student>) => void
+  onUpdateStudent: (studentId: string, updatedData: {
+    firstName: string
+    lastName: string
+    dateOfBirth: string
+    grade: string
+  }) => void
 }
 
 export function StudentList({ students, onRemoveStudent, onUpdateStudent }: StudentListProps) {
@@ -100,7 +110,7 @@ export function StudentList({ students, onRemoveStudent, onUpdateStudent }: Stud
                       </div>
                       <div className="flex items-center space-x-1">
                         <User className="h-4 w-4" />
-                        <span>Enrolled {new Date(student.enrollmentDate).toLocaleDateString()}</span>
+                        <span>Enrolled {new Date(student.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>

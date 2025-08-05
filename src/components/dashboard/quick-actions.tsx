@@ -32,13 +32,13 @@ export function QuickActions() {
         router.push('/attendance')
         break
       case 'Add Lesson':
-        showNotification('Add Lesson feature coming soon...')
+        router.push('/curriculum')
         break
       case 'Generate Report':
-        showNotification('Generate Report feature coming soon...')
+        router.push('/reports')
         break
       case 'Settings':
-        showNotification('Settings feature coming soon...')
+        router.push('/settings')
         break
       default:
         showNotification(`${actionTitle} clicked! Feature coming soon...`)
@@ -48,28 +48,32 @@ export function QuickActions() {
 
   const actions = [
     {
-      title: "Add Lesson",
-      description: "Plan today's activities",
-      icon: Plus,
-      color: "bg-blue-500 hover:bg-blue-600"
+      title: "Mark Attendance",
+      description: "Record today's school day",
+      icon: Calendar,
+      color: "bg-green-500 hover:bg-green-600",
+      priority: "high"
     },
     {
-      title: "Mark Attendance",
-      description: "Record school day",
-      icon: Calendar,
-      color: "bg-green-500 hover:bg-green-600"
+      title: "Manage Students",
+      description: "View & edit profiles",
+      icon: Users,
+      color: "bg-blue-500 hover:bg-blue-600",
+      priority: "high"
+    },
+    {
+      title: "Add Lesson",
+      description: "Plan activities",
+      icon: Plus,
+      color: "bg-indigo-500 hover:bg-indigo-600",
+      priority: "medium"
     },
     {
       title: "Generate Report",
       description: "Create transcript",
       icon: FileText,
-      color: "bg-purple-500 hover:bg-purple-600"
-    },
-    {
-      title: "Manage Students",
-      description: "Edit profiles",
-      icon: Users,
-      color: "bg-orange-500 hover:bg-orange-600"
+      color: "bg-purple-500 hover:bg-purple-600",
+      priority: "low"
     }
   ]
 
@@ -89,21 +93,21 @@ export function QuickActions() {
         </div>
       )}
 
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-        <p className="text-sm text-gray-600 mt-1">Common tasks and shortcuts</p>
+      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <h3 className="text-xl font-bold text-gray-900">Daily Actions</h3>
+        <p className="text-sm text-gray-600 mt-1">Quick access to your most common tasks</p>
       </div>
       <div className="p-6">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {actions.map((action, index) => (
             <button
               key={index}
               onClick={() => handleAction(action.title)}
-              className={`${action.color} text-white p-4 rounded-lg text-left transition-colors cursor-pointer`}
+              className={`${action.color} text-white p-5 rounded-xl text-left transition-all duration-200 cursor-pointer transform hover:scale-105 hover:shadow-lg`}
             >
-              <action.icon className="h-6 w-6 mb-2" />
-              <h4 className="font-medium text-sm">{action.title}</h4>
-              <p className="text-xs opacity-90">{action.description}</p>
+              <action.icon className="h-7 w-7 mb-3" />
+              <h4 className="font-semibold text-sm mb-1">{action.title}</h4>
+              <p className="text-xs opacity-90 leading-relaxed">{action.description}</p>
             </button>
           ))}
         </div>

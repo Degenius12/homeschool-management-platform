@@ -20,24 +20,53 @@ interface AttendanceRecord {
 
 export function AttendanceForm() {
   const [students, setStudents] = useState<Student[]>([])
-  const [todayDate] = useState(new Date().toISOString().split('T')[0])
+  const [todayDate, setTodayDate] = useState<string>('')
+  
+  // Set date on client side only to avoid SSR mismatch
+  useEffect(() => {
+    // Force local timezone calculation by using date parts directly
+    const now = new Date()
+    
+    // Method 1: Direct local date parts
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0') 
+    const day = String(now.getDate()).padStart(2, '0')
+    const method1 = `${year}-${month}-${day}`
+    
+    // Method 2: Using toLocaleDateString and parsing
+    const localDateParts = now.toLocaleDateString('en-CA') // YYYY-MM-DD format
+    
+    // Method 3: Adjust for timezone offset
+    const offsetMs = now.getTimezoneOffset() * 60000
+    const localTime = new Date(now.getTime() - offsetMs)
+    const method3 = localTime.toISOString().split('T')[0]
+    
+    // Use method 2 (toLocaleDateString) as it should be most reliable
+    const dateString = localDateParts
+    setTodayDate(dateString)
+  }, [])
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notification, setNotification] = useState('')
   const [alreadyMarked, setAlreadyMarked] = useState(false)
+  const [currentSchoolYearId, setCurrentSchoolYearId] = useState<string | null>(null)
 
-  // Load students from localStorage
+  // Load students from API
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const savedStudents = localStorage.getItem('homeschool-students')
-        if (savedStudents) {
-          const parsedStudents = JSON.parse(savedStudents)
-          setStudents(parsedStudents)
+    const loadStudents = async () => {
+      if (!todayDate) return // Wait for todayDate to be set
+      
+      try {
+        console.log('Fetching students from API...')
+        const response = await fetch('/api/students')
+        if (response.ok) {
+          const studentsData = await response.json()
+          console.log('Students fetched:', studentsData.length, studentsData)
+          setStudents(studentsData)
           
           // Initialize attendance records for today
           const initialRecords: Record<string, AttendanceRecord> = {}
-          parsedStudents.forEach((student: Student) => {
+          studentsData.forEach((student: Student) => {
             initialRecords[student.id] = {
               studentId: student.id,
               date: todayDate,
@@ -48,29 +77,55 @@ export function AttendanceForm() {
           })
           setAttendanceRecords(initialRecords)
 
-          // Check if attendance already marked for today
-          const savedAttendance = localStorage.getItem('homeschool-attendance')
-          if (savedAttendance) {
-            const parsedAttendance = JSON.parse(savedAttendance)
-            const todayAttendance = parsedAttendance.filter((record: AttendanceRecord) => 
-              record.date === todayDate
-            )
-            if (todayAttendance.length > 0) {
+          // Check if attendance already exists for today from the API
+          const attendanceResponse = await fetch(`/api/attendance?date=${todayDate}`)
+          if (attendanceResponse.ok) {
+            const existingAttendance = await attendanceResponse.json()
+            if (existingAttendance.length > 0) {
               setAlreadyMarked(true)
               // Load existing attendance for today
               const existingRecords: Record<string, AttendanceRecord> = {}
-              todayAttendance.forEach((record: AttendanceRecord) => {
-                existingRecords[record.studentId] = record
+              existingAttendance.forEach((record: any) => {
+                existingRecords[record.studentId] = {
+                  studentId: record.studentId,
+                  date: record.date,
+                  status: record.status.toLowerCase(), // Convert back to lowercase for UI
+                  hours: record.hours,
+                  notes: record.notes || ''
+                }
               })
-              setAttendanceRecords(existingRecords)
+              setAttendanceRecords(prev => ({ ...prev, ...existingRecords }))
             }
           }
+        } else {
+          console.error('Failed to fetch students')
         }
+      } catch (error) {
+        console.error('Error loading students:', error)
       }
-    } catch (error) {
-      console.error('Error loading students:', error)
     }
+
+    loadStudents()
   }, [todayDate])
+
+  // Fetch current school year
+  useEffect(() => {
+    const fetchCurrentSchoolYear = async () => {
+      try {
+        const response = await fetch('/api/school-years/current')
+        if (response.ok) {
+          const schoolYear = await response.json()
+          setCurrentSchoolYearId(schoolYear.id)
+        } else {
+          console.error('Failed to fetch current school year')
+        }
+      } catch (error) {
+        console.error('Error fetching current school year:', error)
+      }
+    }
+
+    fetchCurrentSchoolYear()
+  }, [])
 
   const showNotification = (message: string) => {
     setNotification(message)
@@ -91,27 +146,40 @@ export function AttendanceForm() {
     e.preventDefault()
     setIsSubmitting(true)
 
+    // Validate that we have a school year ID
+    if (!currentSchoolYearId) {
+      showNotification('Error: School year not found. Please try refreshing the page.')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
-      // Save attendance records to localStorage
-      const savedAttendance = localStorage.getItem('homeschool-attendance')
-      let allAttendance: AttendanceRecord[] = savedAttendance ? JSON.parse(savedAttendance) : []
-      
-      // Remove any existing records for today (in case of update)
-      allAttendance = allAttendance.filter(record => record.date !== todayDate)
-      
-      // Add today's records
+      // Send today's attendance records to the server
       const todayRecords = Object.values(attendanceRecords)
-      allAttendance.push(...todayRecords)
-      
-      localStorage.setItem('homeschool-attendance', JSON.stringify(allAttendance))
-      
-      // Notify other components
-      window.dispatchEvent(new CustomEvent('attendance-updated'))
-      
+
+      for (const record of todayRecords) {
+        const response = await fetch('/api/attendance', {
+          method: alreadyMarked ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...record,
+            schoolYearId: currentSchoolYearId,
+          }),
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.text()
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`)
+        }
+      }
+
       setAlreadyMarked(true)
-      showNotification(`Attendance marked successfully for ${new Date(todayDate).toLocaleDateString()}!`)
+      showNotification(`Attendance ${alreadyMarked ? 'updated' : 'marked'} successfully for ${new Date(todayDate).toLocaleDateString()}!`)
       
     } catch (error) {
+      console.error('Error saving attendance:', error)
       showNotification('Error saving attendance. Please try again.')
     } finally {
       setIsSubmitting(false)
@@ -176,12 +244,18 @@ export function AttendanceForm() {
           <div className="flex items-center space-x-2">
             <Calendar className="h-5 w-5 text-gray-600" />
             <span className="font-medium text-gray-900">
-              {new Date(todayDate).toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+              {todayDate ? (() => {
+                // Parse date string manually to avoid timezone issues
+                const [year, month, day] = todayDate.split('-').map(Number)
+                const localDate = new Date(year, month - 1, day) // month is 0-indexed
+                const displayDate = localDate.toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })
+                return displayDate
+              })() : 'Loading...'}
             </span>
           </div>
           <div className="flex items-center space-x-4 text-sm text-gray-600">
