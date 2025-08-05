@@ -7,13 +7,16 @@ yarn-error.log*
 # Next.js
 .next/
 out/
-dist/
 
 # Database
 prisma/dev.db
 prisma/dev.db-journal
 *.db
 *.db-journal
+
+# Production build
+build/
+dist/
 
 # Environment variables
 .env
@@ -22,7 +25,7 @@ prisma/dev.db-journal
 .env.test.local
 .env.production.local
 
-# IDE/Editor files
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
@@ -48,8 +51,37 @@ pids
 *.seed
 *.pid.lock
 
-# Build outputs
+# Build outputs and cache
 tsconfig.tsbuildinfo
+*.tsbuildinfo
+.cache
+.parcel-cache
+
+# Coverage directory
+coverage/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
 
 # Development scripts and test files
 test-*.js
@@ -61,6 +93,3 @@ Dockerfile.dev
 cd
 homeschool-management-platform@1.0.0
 next
-
-# Package files
-package-lock.json
