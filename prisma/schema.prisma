@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x", "windows"]
 }
 
@@ -11,253 +8,205 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User Management
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  image         String?
-  role          String    @default("PARENT")
-  families      FamilyMember[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String         @id @default(cuid())
+  email     String         @unique
+  name      String?
+  image     String?
+  role      String         @default("PARENT")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  families  FamilyMember[]
 
   @@map("users")
 }
 
 model Family {
-  id            String    @id @default(cuid())
-  name          String
-  state         String    @default("TN") // Tennessee by default
-  members       FamilyMember[]
-  students      Student[]
-  schoolYears   SchoolYear[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String         @id @default(cuid())
+  name        String
+  state       String         @default("TN")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  members     FamilyMember[]
+  schoolYears SchoolYear[]
+  students    Student[]
 
   @@map("families")
 }
 
 model FamilyMember {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
   familyId  String
-  role      String     @default("PARENT")
+  role      String   @default("PARENT")
   createdAt DateTime @default(now())
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, familyId])
   @@map("family_members")
 }
 
-// Student Management
 model Student {
-  id            String    @id @default(cuid())
-  firstName     String
-  lastName      String
-  dateOfBirth   DateTime
-  grade         String
-  family        Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  familyId      String
-  
-  // Academic Records
-  attendanceRecords AttendanceRecord[]
+  id                String             @id @default(cuid())
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime
+  grade             String
+  familyId          String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  assessments       Assessment[]
   assignments       Assignment[]
-  grades           Grade[]
-  assessments      Assessment[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  attendanceRecords AttendanceRecord[]
+  grades            Grade[]
+  family            Family             @relation(fields: [familyId], references: [id], onDelete: Cascade)
 
   @@map("students")
 }
 
-// School Year & Curriculum
 model SchoolYear {
-  id            String    @id @default(cuid())
-  family        Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  familyId      String
-  year          String    // "2024-2025"
-  startDate     DateTime
-  endDate       DateTime
-  daysRequired  Int       @default(180)
-  
-  subjects      Subject[]
+  id                String             @id @default(cuid())
+  familyId          String
+  year              String
+  startDate         DateTime
+  endDate           DateTime
+  daysRequired      Int                @default(180)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   attendanceRecords AttendanceRecord[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  family            Family             @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  subjects          Subject[]
 
   @@unique([familyId, year])
   @@map("school_years")
 }
 
 model Subject {
-  id            String    @id @default(cuid())
-  name          String
-  description   String?
-  curriculum    String    @default("TGTB") // The Good and the Beautiful
-  grade         String
-  schoolYear    SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  schoolYearId  String
-  
-  lessons       Lesson[]
-  assignments   Assignment[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String       @id @default(cuid())
+  name         String
+  description  String?
+  curriculum   String       @default("TGTB")
+  grade        String
+  schoolYearId String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  assignments  Assignment[]
+  lessons      Lesson[]
+  schoolYear   SchoolYear   @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
 
   @@map("subjects")
 }
 
 model Lesson {
-  id            String    @id @default(cuid())
-  title         String
-  description   String?
-  lessonNumber  Int?
-  estimatedHours Float    @default(1.0)
-  subject       Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  subjectId     String
-  
-  assignments   Assignment[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  lessonNumber   Int?
+  estimatedHours Float        @default(1.0)
+  subjectId      String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  assignments    Assignment[]
+  subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@map("lessons")
 }
 
-// Attendance Tracking
 model AttendanceRecord {
-  id            String    @id @default(cuid())
-  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId     String
-  schoolYear    SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  schoolYearId  String
-  date          DateTime
-  status        String           @default("PRESENT")
-  hours         Float     @default(4.0)
-  notes         String?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String     @id @default(cuid())
+  studentId    String
+  schoolYearId String
+  date         DateTime
+  status       String     @default("PRESENT")
+  hours        Float      @default(4.0)
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, date])
   @@map("attendance_records")
 }
 
-// Academic Tracking
 model Assignment {
-  id            String    @id @default(cuid())
-  title         String
-  description   String?
-  dueDate       DateTime?
-  assignedDate  DateTime  @default(now())
-  
-  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId     String
-  subject       Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  subjectId     String
-  lesson        Lesson?   @relation(fields: [lessonId], references: [id], onDelete: SetNull)
-  lessonId      String?
-  
-  type          String         @default("WORKSHEET")
-  status        String         @default("NOT_STARTED")
-  
-  grades        Grade[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  title        String
+  description  String?
+  dueDate      DateTime?
+  assignedDate DateTime  @default(now())
+  studentId    String
+  subjectId    String
+  lessonId     String?
+  type         String    @default("WORKSHEET")
+  status       String    @default("NOT_STARTED")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lesson       Lesson?   @relation(fields: [lessonId], references: [id])
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject      Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  grades       Grade[]
 
   @@map("assignments")
 }
 
 model Grade {
-  id            String    @id @default(cuid())
-  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId     String
-  assignment    Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  assignmentId  String
-  
-  score         Float?    // Raw score
-  percentage    Float?    // Percentage score
-  letterGrade   String?   // A, B, C, D, F
-  points        Float?    // Points earned
-  maxPoints     Float?    // Total possible points
-  
-  gradedDate    DateTime  @default(now())
-  notes         String?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String     @id @default(cuid())
+  studentId    String
+  assignmentId String
+  score        Float?
+  percentage   Float?
+  letterGrade  String?
+  points       Float?
+  maxPoints    Float?
+  gradedDate   DateTime   @default(now())
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([assignmentId, studentId])
   @@map("grades")
 }
 
-// Assessments & Testing
 model Assessment {
-  id            String    @id @default(cuid())
-  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId     String
-  
-  type          String
-  title         String
-  testDate      DateTime
-  score         Float?
-  maxScore      Float?
-  percentile    Float?
-  
-  // Tennessee-specific fields
-  grade         String    // Grade when test was taken
-  testingYear   String    // Academic year
-  
-  notes         String?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String   @id @default(cuid())
+  studentId   String
+  type        String
+  title       String
+  testDate    DateTime
+  score       Float?
+  maxScore    Float?
+  percentile  Float?
+  grade       String
+  testingYear String
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("assessments")
 }
 
-// Tennessee Compliance
 model ComplianceRecord {
-  id            String    @id @default(cuid())
-  familyId      String
-  schoolYear    String
-  
-  // Notice of Intent
-  noticeOfIntentFiled    Boolean   @default(false)
-  noticeOfIntentDate     DateTime?
-  
-  // Attendance Compliance
-  totalDaysCompleted     Int       @default(0)
-  daysRequired          Int       @default(180)
-  complianceStatus      String           @default("ON_TRACK")
-  
-  // Testing Requirements
-  testingRequired       Boolean   @default(false)
-  testingCompleted      Boolean   @default(false)
-  testingDueDate        DateTime?
-  
-  // Records
-  recordsLocation       String?   // Where records are stored
-  portfolioCompleted    Boolean   @default(false)
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  familyId            String
+  schoolYear          String
+  noticeOfIntentFiled Boolean   @default(false)
+  noticeOfIntentDate  DateTime?
+  totalDaysCompleted  Int       @default(0)
+  daysRequired        Int       @default(180)
+  complianceStatus    String    @default("ON_TRACK")
+  testingRequired     Boolean   @default(false)
+  testingCompleted    Boolean   @default(false)
+  testingDueDate      DateTime?
+  recordsLocation     String?
+  portfolioCompleted  Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@unique([familyId, schoolYear])
   @@map("compliance_records")
 }
-
-// Note: Using strings instead of enums for SQLite compatibility
-// Valid values:
-// UserRole: PARENT, STUDENT, ADMIN, UMBRELLA_SCHOOL
-// FamilyRole: PARENT, GUARDIAN, TEACHER, STUDENT
-// AttendanceStatus: PRESENT, ABSENT, PARTIAL, EXCUSED
-// AssignmentType: WORKSHEET, PROJECT, QUIZ, TEST, READING, WRITING, EXPERIMENT, FIELD_TRIP, OTHER
-// AssignmentStatus: NOT_STARTED, IN_PROGRESS, COMPLETED, SUBMITTED, GRADED, RETURNED
-// AssessmentType: STANDARDIZED_TEST, DIAGNOSTIC, PORTFOLIO_REVIEW, ACHIEVEMENT_TEST, TENNESSEE_REQUIRED, OTHER
-// ComplianceStatus: ON_TRACK, NEEDS_ATTENTION, AT_RISK, NON_COMPLIANT

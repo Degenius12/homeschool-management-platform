@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FileText, Download, Calendar, User, BarChart3, Clock, BookOpen, Award, TrendingUp, Filter } from 'lucide-react'
 
 interface ReportTemplate {
@@ -13,16 +13,38 @@ interface ReportTemplate {
   required: boolean
 }
 
+interface Student {
+  id: string
+  firstName: string
+  lastName: string
+  grade: string
+  dateOfBirth: string
+}
+
 export default function ReportsPage() {
   const [selectedStudent, setSelectedStudent] = useState<string>('all')
   const [selectedPeriod, setSelectedPeriod] = useState<string>('current-year')
   const [isGenerating, setIsGenerating] = useState<string | null>(null)
+  const [students, setStudents] = useState<Student[]>([])
 
-  const students = [
-    { id: '1', name: 'Emma Johnson' },
-    { id: '2', name: 'Liam Johnson' },
-    { id: '3', name: 'Ian John' }
-  ]
+  // Load students from database
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        const response = await fetch('/api/students')
+        if (response.ok) {
+          const studentsData = await response.json()
+          setStudents(studentsData.map((student: any) => ({
+            ...student,
+            dateOfBirth: student.dateOfBirth.split('T')[0]
+          })))
+        }
+      } catch (error) {
+        console.error('Error loading students:', error)
+      }
+    }
+    loadStudents()
+  }, [])
 
   const reportTemplates: ReportTemplate[] = [
     {
@@ -84,16 +106,53 @@ export default function ReportsPage() {
   const handleGenerateReport = async (reportId: string) => {
     setIsGenerating(reportId)
     
-    // Simulate report generation
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // In a real app, this would trigger the actual report generation
-    console.log(`Generating report: ${reportId} for student: ${selectedStudent} period: ${selectedPeriod}`)
-    
-    setIsGenerating(null)
-    
-    // Show success notification (you could add a toast notification here)
-    alert('Report generated successfully! Check your downloads folder.')
+    try {
+      // Call server-side API to generate report
+      const response = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportType: reportId,
+          studentId: selectedStudent,
+          period: selectedPeriod
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to generate report')
+      }
+
+      // Get the PDF blob from the response
+      const blob = await response.blob()
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      
+      // Set filename based on report type
+      const filename = `${reportId}-${new Date().toISOString().split('T')[0]}.pdf`
+      link.download = filename
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(url)
+      
+      alert('Report generated successfully! The PDF has been downloaded.')
+      
+    } catch (error) {
+      console.error('Error generating report:', error)
+      alert(`Error generating report: ${error instanceof Error ? error.message : 'Please try again.'}`)
+    } finally {
+      setIsGenerating(null)
+    }
   }
 
   const getTypeColor = (type: ReportTemplate['type']) => {
@@ -145,7 +204,7 @@ export default function ReportsPage() {
               >
                 <option value="all">All Students</option>
                 {students.map(student => (
-                  <option key={student.id} value={student.id}>{student.name}</option>
+                  <option key={student.id} value={student.id}>{student.firstName} {student.lastName}</option>
                 ))}
               </select>
             </div>
