@@ -27,7 +27,7 @@ export default function AttendancePage() {
       {/* Quick Attendance Form */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          📅 Mark Today's Attendance
+          📅 Mark Today&apos;s Attendance
         </h2>
         <AttendanceForm />
       </div>

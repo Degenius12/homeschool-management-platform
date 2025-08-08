@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AttendanceChart } from '@/components/dashboard/attendance-chart'
 import { ComplianceStatus } from '@/components/dashboard/compliance-status'
 import { StudentOverview } from '@/components/dashboard/student-overview'
@@ -5,6 +9,33 @@ import { UpcomingTasks } from '@/components/dashboard/upcoming-tasks'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user has completed onboarding
+    const familyInfo = localStorage.getItem('homeschool-family-info');
+    const students = localStorage.getItem('homeschool-students');
+    
+    // If no family info or students exist, redirect to onboarding
+    if (!familyInfo || !students) {
+      router.push('/onboarding');
+      return;
+    }
+    
+    setIsLoading(false);
+  }, [router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
       {/* Header with improved styling */}
@@ -13,7 +44,7 @@ export default function DashboardPage() {
           Welcome to Your Homeschool Dashboard
         </h1>
         <p className="text-blue-100 text-lg">
-          Track your family's progress with The Good and the Beautiful curriculum 
+          Track your family&apos;s progress with The Good and the Beautiful curriculum 
           while staying Tennessee compliant.
         </p>
       </div>

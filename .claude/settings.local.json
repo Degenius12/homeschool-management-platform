@@ -5,7 +5,18 @@
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
       "Bash(npm install:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npm run lint)",
+      "Bash(echo $env:APPDATA)",
+      "Bash(npm search:*)",
+      "Bash(dir:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(ls:*)",
+      "Bash(git clone:*)",
+      "Bash(npm run build:*)",
+      "Bash(start \"C:\\Users\\tonyt\\superdesign-new\\design_iterations\\modern_homeschool_ma_1.html\")",
+      "Bash(start \"C:\\Users\\tonyt\\superdesign-new\\design_iterations\\modern_homeschool_ma_2.html\")",
+      "Bash(start \"C:\\Users\\tonyt\\superdesign-new\\design_iterations\\modern_homeschool_ma_3.html\")"
     ],
     "deny": []
   }

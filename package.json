@@ -17,7 +17,7 @@
     "db:studio": "npx prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^5.7.1",
+    "@prisma/client": "^6.13.0",
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
@@ -27,7 +27,7 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.300.0",
-    "next": "14.0.4",
+    "next": "^14.2.31",
     "postcss": "^8.4.32",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -42,7 +42,7 @@
     "@typescript-eslint/parser": "^6.13.2",
     "eslint": "^8.55.0",
     "eslint-config-next": "14.0.4",
-    "prisma": "^5.7.1"
+    "prisma": "^6.13.0"
   },
   "keywords": [
     "homeschool",

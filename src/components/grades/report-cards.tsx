@@ -42,7 +42,7 @@ export function ReportCards({ students, selectedStudent, grades, assessments }: 
       {student ? (
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900">
-            {student.firstName} {student.lastName}'s Report Card
+            {student.firstName} {student.lastName}&apos;s Report Card
           </h2>
           <p className="text-gray-600 mt-1 mb-4">{student.grade} Grade</p>
 
